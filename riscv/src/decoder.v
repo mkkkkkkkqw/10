@@ -117,106 +117,190 @@
 
 
 
-           always @(*) begin
-    // $display("Dec");
-    opcode = inst[`OPCODE_RANGE];
-    funct3 = inst[`FUNCT3_RANGE];
-    funct7 = inst[30];
-    rd = inst[`RD_RANGE];
-    imm = 0;
-    pc = inst_pc;
-    pred_jump = inst_pred_jump;
+            always@(*) begin
+                if(rst||!inst_rdy||rollback) begin
+                    opcode = inst[`OPCODE_RANGE];
+                    funct3 = inst[`FUNCT3_RANGE];
+                    funct7 = inst[30];
+                    rd = inst[`RD_RANGE];
+                    imm = 0;
+                    pc = inst_pc;
+                    pred_jump = inst_pred_jump;
 
-    rob_pos = nxt_rob_pos;
+                    rob_pos = nxt_rob_pos;
 
-    issue  = 0;
-    lsb_en = 0;
-    rs_en  = 0;
-    is_ready = 0;
+                    issue  = 0;
+                    lsb_en = 0;
+                    rs_en  = 0;
+                    is_ready = 0;
 
-    rs1_val = 0;
-    rs1_rob_id = 0;
-    rs2_val = 0;
-    rs2_rob_id = 0;
+                    rs1_val = 0;
+                    rs1_rob_id = 0;
+                    rs2_val = 0;
+                    rs2_rob_id = 0;
+                end
+                else if(!rdy) begin
+                    opcode = inst[`OPCODE_RANGE];
+                    funct3 = inst[`FUNCT3_RANGE];
+                    funct7 = inst[30];
+                    rd = inst[`RD_RANGE];
+                    imm = 0;
+                    pc = inst_pc;
+                    pred_jump = inst_pred_jump;
 
-    if (rst || !inst_rdy || rollback || !rdy) begin
-      ;
-    end else begin
-      issue = 1;
+                    rob_pos = nxt_rob_pos;
 
-      rs1_rob_id = 0;
-      if (reg_rs1_rob_id[4] == 0) begin
-        rs1_val = reg_rs1_val;
-      end else if (rob_rs1_ready) begin
-        rs1_val = rob_rs1_val;
-      end else if (alu_result && rob_rs1_pos == alu_result_rob_pos) begin
-        rs1_val = alu_result_val;
-      end else if (lsb_result && rob_rs1_pos == lsb_result_rob_pos) begin
-        rs1_val = lsb_result_val;
-      end else begin
-        rs1_val = 0;
-        rs1_rob_id = reg_rs1_rob_id;
-      end
+                    issue  = 0;
+                    lsb_en = 0;
+                    rs_en  = 0;
+                    is_ready = 0;
 
-      rs2_rob_id = 0;
-      if (reg_rs2_rob_id[4] == 0) begin
-        rs2_val = reg_rs2_val;
-      end else if (rob_rs2_ready) begin
-        rs2_val = rob_rs2_val;
-      end else if (alu_result && rob_rs2_pos == alu_result_rob_pos) begin
-        rs2_val = alu_result_val;
-      end else if (lsb_result && rob_rs2_pos == lsb_result_rob_pos) begin
-        rs2_val = lsb_result_val;
-      end else begin
-        rs2_val = 0;
-        rs2_rob_id = reg_rs2_rob_id;
-      end
+                    rs1_val = 0;
+                    rs1_rob_id = 0;
+                    rs2_val = 0;
+                    rs2_rob_id = 0;
+                end
 
-      // mask unused rs1 rs2
-      case (inst[`OPCODE_RANGE])
-        `OPCODE_S: begin
-          lsb_en   = 1;
-          is_ready = 1;
-          rd       = 0;
-          imm      = {{21{inst[31]}}, inst[30:25], inst[11:7]};
-        end
-        `OPCODE_L: begin
-          lsb_en     = 1;
-          rs2_rob_id = 0;
-          rs2_val    = 0;
-          imm        = {{21{inst[31]}}, inst[30:20]};
-        end
-        `OPCODE_ARITHI, `OPCODE_JALR: begin
-          rs_en      = 1;
-          rs2_rob_id = 0;
-          rs2_val    = 0;
-          imm        = {{21{inst[31]}}, inst[30:20]};
-        end
-        `OPCODE_ARITH: rs_en = 1;
-        `OPCODE_JAL: begin
-          rs_en      = 1;
-          rs1_rob_id = 0;
-          rs1_val    = 0;
-          rs2_rob_id = 0;
-          rs2_val    = 0;
-          imm        = {{12{inst[31]}}, inst[19:12], inst[20], inst[30:21], 1'b0};
-        end
-        `OPCODE_BR: begin
-          rs_en = 1;
-          rd    = 0;
-          imm   = {{20{inst[31]}}, inst[7], inst[30:25], inst[11:8], 1'b0};
-        end
-        `OPCODE_LUI, `OPCODE_AUIPC: begin
-          rs_en      = 1;
-          rs1_rob_id = 0;
-          rs1_val    = 0;
-          rs2_rob_id = 0;
-          rs2_val    = 0;
-          imm        = {inst[31:12], 12'b0};
-        end
-      endcase
-    end
-  end
+                else begin
+                    opcode = inst[`OPCODE_RANGE];
+                    funct3 = inst[`FUNCT3_RANGE];
+                    funct7 = inst[30];
+                    rd = inst[`RD_RANGE];
+                    imm = 0;
+                    pc = inst_pc;
+                    pred_jump = inst_pred_jump;
+                    rob_pos = nxt_rob_pos;
+                    lsb_en = 0;
+                    rs_en  = 0;
+                    is_ready = 0;
+                    issue=1;
+
+
+
+                    rs1_rob_id=0;
+                    if(reg_rs1_rob_id[4]==0||rob_rs1_ready) begin
+                        // flag: 0 = ready, 1 = renamed
+                        rs1_val=reg_rs1_val;
+                    end
+                    else if(alu_result&&rob_rs1_pos==alu_result_rob_pos) begin
+                        rs1_val=alu_result_val;
+                    end
+                    else if(lsb_result&&(lsb_result_rob_pos==rob_rs1_pos)) begin
+                        rs1_val=lsb_result_val;
+                    end
+                    else begin
+                        rs1_val=0;
+                        rs1_rob_id=reg_rs1_rob_id;
+                    end
+
+
+
+                    rs2_rob_id=0;
+                    if(reg_rs2_rob_id[4]==0||rob_rs2_ready) begin
+                        // flag: 0 = ready, 1 = renamed
+                        rs2_val=reg_rs2_val;
+                    end
+                    else if(alu_result&&rob_rs2_pos==alu_result_rob_pos) begin
+                        rs2_val=alu_result_val;
+                    end
+                    else if(lsb_result&&(lsb_result_rob_pos==rob_rs2_pos)) begin
+                        rs2_val=lsb_result_val;
+                    end
+                    else begin
+                        rs2_val=0;
+                        rs2_rob_id=reg_rs2_rob_id;
+                    end
+
+
+
+
+
+                    // lsb_en<=0;
+                    // rs_en<=0;
+                    // rob_en<=0;
+
+
+                    case(opcode)
+                        7'b0100011: begin
+                            //store
+                            lsb_en=1;
+                            is_ready=1;
+                            rd=0;
+
+                            imm={{21{inst[31]}},inst[30:25],inst[11:7]};
+                        end
+                        7'b0000011: begin
+                            //load
+                            rs2_rob_id=0;
+                            rs2_val=0;
+                            lsb_en=1;
+                            // lsb_en<=1;
+                            imm={{21{inst[31]}},inst[30:20]};
+                        end
+                        7'b0010011: begin
+                            //ARITHI
+                            //算术立即数
+                            rs_en      = 1;
+                            rs2_rob_id = 0;
+                            rs2_val    = 0;
+                            imm        = {{21{inst[31]}}, inst[30:20]};
+                        end
+                        7'b0110011: begin
+                            //ARITH
+                            //算术
+                            rs_en=1;
+                        end
+                        7'b1101111: begin
+                            //跳转
+                            //jal
+                            rs_en      = 1;
+                            rs1_rob_id = 0;
+                            rs1_val    = 0;
+                            rs2_rob_id = 0;
+                            rs2_val    = 0;
+                            imm        = {{12{inst[31]}}, inst[19:12], inst[20], inst[30:21], 1'b0};
+                        end
+                        7'b1100011: begin
+                            //branch
+                            //分支
+                            rs_en = 1;
+                            rd    = 0;
+                            imm   = {{20{inst[31]}}, inst[7], inst[30:25], inst[11:8], 1'b0};
+                        end
+                        7'b1100111: begin
+                            //jalr
+                            //跳转
+                            rs_en      = 1;
+                            rs2_rob_id = 0;
+                            rs2_val    = 0;
+                            imm        = {{21{inst[31]}}, inst[30:20]};
+                        end
+                        7'b0110111: begin
+                            //lui
+                            //立即数
+                            rs_en      = 1;
+                            rs1_rob_id = 0;
+                            rs1_val    = 0;
+                            rs2_rob_id = 0;
+                            rs2_val    = 0;
+                            imm        = {inst[31:12], 12'b0};
+                        end
+                        7'b0010111: begin
+                            //auipc
+                            //立即数
+                            rs_en      = 1;
+                            rs1_rob_id = 0;
+                            rs1_val    = 0;
+                            rs2_rob_id = 0;
+                            rs2_val    = 0;
+                            imm        = {inst[31:12], 12'b0};
+                        end
+                    endcase
+
+
+                end
+            end
+
 
 
 
