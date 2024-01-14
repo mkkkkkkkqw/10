@@ -29,8 +29,41 @@
                 output reg[31:0]result_pc
 
             );
+            // `define OPCODE_L 7'b0000011
+            //         //load
+            // `define OPCODE_S 7'b0100011
+            //         //store
+            // `define OPCODE_ARITHI 7'b0010011
+            //         //算术立即数
+            // `define OPCODE_ARITH 7'b0110011
+            //         //算术
+            // `define OPCODE_BRANCH 7'b1100011
+            //         //分支
+            // `define OPCODE_BR 7'b1100011
 
+            // `define OPCODE_JALR 7'b1100111
+            //         //JALR
+            // `define OPCODE_JAL 7'b1101111
+            //         //JAL
+            // `define OPCODE_LUI 7'b0110111
+            //         //LUI 将立即数加载到上半字
+            // `define OPCODE_AUIPC 7'b0010111
+            //         //AUIPC 将立即数加到程序计数器
+            // `define FUNCT3_ADD  3'h0
+            // `define FUNCT3_SUB  3'h0
+            // `define FUNCT3_XOR  3'h4
+            // `define FUNCT3_OR   3'h6
+            // `define FUNCT3_AND  3'h7
+            // `define FUNCT3_SLL  3'h1
+            // `define FUNCT3_SRL  3'h5
+            // `define FUNCT3_SRA  3'h5
+            // `define FUNCT3_SLT  3'h2
+            // `define FUNCT3_SLTU 3'h3
 
+            // `define FUNCT7_ADD 1'b0
+            // `define FUNCT7_SUB 1'b1
+            // `define FUNCT7_SRL 1'b0
+            // `define FUNCT7_SRA 1'b1
 
             wire [31:0]arith_op1=val1;
             wire [31:0]arith_op2=(opcode==7'b0110011)?val2:imm;//判断是否是计算
@@ -50,7 +83,7 @@
                         arith_res=arith_op1<<arith_op2;
                     end
                     3'b010: begin//slt
-                        arith_res=(arith_op1<arith_op2)?1:0;
+                        arith_res = ($signed(arith_op1) < $signed(arith_op2));
                     end
                     3'b011: begin//sltu
                         arith_res=(arith_op1<arith_op2)?1:0;
@@ -97,18 +130,24 @@
             reg jump;
             always @(*) begin
                 case (funct3)
-                    `FUNCT3_BEQ:
+                    `FUNCT3_BEQ: begin
                         jump = (val1 == val2);
-                    `FUNCT3_BNE:
+                    end
+                    `FUNCT3_BNE: begin
                         jump = (val1 != val2);
-                    `FUNCT3_BLT:
+                    end
+                    `FUNCT3_BLT: begin
                         jump = ($signed(val1) < $signed(val2));
-                    `FUNCT3_BGE:
+                    end
+                    `FUNCT3_BGE: begin
                         jump = ($signed(val1) >= $signed(val2));
-                    `FUNCT3_BLTU:
+                    end
+                    `FUNCT3_BLTU: begin
                         jump = (val1 < val2);
-                    `FUNCT3_BGEU:
+                    end
+                    `FUNCT3_BGEU: begin
                         jump = (val1 >= val2);
+                    end
                     default:
                         jump = 0;
                 endcase
@@ -125,53 +164,56 @@
                 else if(rdy==0) begin
 
                 end
-                else if (alu_en) begin
+                else if  begin
                     result<=0;
-                    result_rob_pos<=rob_pos;
-                    result_jump <= 0;
-                    case(opcode)
-                        //ARITH  ARITHI:
-                        7'b0110011: begin//计算
-                            result_val<=arith_res;
-                        end
-                        7'b0010011: begin//立即数
-                            result_val<=arith_res;
-                        end
+                    if(alu_en) begin
+                        result <= 1;
+                            result_rob_pos<=rob_pos;
+                            result_jump <= 0;
+                            case(opcode)
+                                //ARITH  ARITHI:
+                                7'b0110011: begin//计算
+                                    result_val<=arith_res;
+                                end
+                                7'b0010011: begin//立即数
+                                    result_val<=arith_res;
+                                end
 
 
-                        7'b1101111: begin//jal
-                            result_jump <= 1;
-                            result_val <= pc + 4;
-                            result_pc  <= pc + imm;
+                                7'b1101111: begin//jal
+                                    result_jump <= 1;
+                                    result_val <= pc + 4;
+                                    result_pc  <= pc + imm;
+                                end
+                                7'b1100111: begin//jalr
+                                    result_jump <= 1;
+                                    result_val <= pc + 4;
+                                    result_pc  <= val1 + imm;
+                                end
+                                7'b1100011: begin
+                                    //branch
+                                    if (jump) begin
+                                        result_jump <= 1;
+                                        result_pc   <= pc + imm;
+                                    end
+                                    else begin
+                                        result_pc   <= pc + 4;
+                                    end
+                                end
+                                7'b0110111: begin//lui
+                                    result_val<=imm;
+                                end
+                                7'b0010111: begin//auipc
+                                    result_val<=pc+imm;
+                                end
+                                // 7'b0000011:begin//load
+                                //     result_val<=arith_res;
+                                // end
+                                default: begin
+                                    result_val=0;
+                                end
+                            endcase
                         end
-                        7'b1100111: begin//jalr
-                            result_jump <= 1;
-                            result_val <= pc + 4;
-                            result_pc  <= val1 + imm;
-                        end
-                        7'b1100011: begin
-                            //branch
-                            if (jump) begin
-                                result_jump <= 1;
-                                result_pc   <= pc + imm;
-                            end
-                            else begin
-                                result_pc   <= pc + 4;
-                            end
-                        end
-                        7'b0110111: begin//lui
-                            result_val<=imm;
-                        end
-                        7'b0010111: begin//auipc
-                            result_val<=pc+imm;
-                        end
-                        // 7'b0000011:begin//load
-                        //     result_val<=arith_res;
-                        // end
-                        default: begin
-                            result_val=0;
-                        end
-                    endcase
                 end
             end
 
