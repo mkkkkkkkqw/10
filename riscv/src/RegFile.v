@@ -1,6 +1,6 @@
 `ifndef REGFILE
 `define REGFILE
-`include "macros.v"
+`include "Mydefine.v"
 module RegFile (
     input wire clk,
     input wire rst,
