@@ -85,28 +85,22 @@
             // wire mc_pc_tag=mc_pc[`TAG_RANGE];//标记(主内存中读取指令并将其存储在缓存中。)
 
             //将cur_block_all中的32位指令分成16个32位指令
-            // assign cur_block[0] = cur_block_all[31:0];
-            // assign cur_block[1] = cur_block_all[63:32];
-            // assign cur_block[2] = cur_block_all[95:64];
-            // assign cur_block[3] = cur_block_all[127:96];
-            // assign cur_block[4] = cur_block_all[159:128];
-            // assign cur_block[5] = cur_block_all[191:160];
-            // assign cur_block[6] = cur_block_all[223:192];
-            // assign cur_block[7] = cur_block_all[255:224];
-            // assign cur_block[8] = cur_block_all[287:256];
-            // assign cur_block[9] = cur_block_all[319:288];
-            // assign cur_block[10] = cur_block_all[351:320];
-            // assign cur_block[11] = cur_block_all[383:352];
-            // assign cur_block[12] = cur_block_all[415:384];
-            // assign cur_block[13] = cur_block_all[447:416];
-            // assign cur_block[14] = cur_block_all[479:448];
-            // assign cur_block[15] = cur_block_all[511:480];
-  genvar _i;
-  generate
-    for (_i = 0; _i < `ICACHE_BLK_SIZE / `INST_SIZE; _i = _i + 1) begin
-      assign cur_block[_i] = cur_block_all[_i*32+31:_i*32];
-    end
-  endgenerate
+            assign cur_block[0] = cur_block_all[31:0];
+            assign cur_block[1] = cur_block_all[63:32];
+            assign cur_block[2] = cur_block_all[95:64];
+            assign cur_block[3] = cur_block_all[127:96];
+            assign cur_block[4] = cur_block_all[159:128];
+            assign cur_block[5] = cur_block_all[191:160];
+            assign cur_block[6] = cur_block_all[223:192];
+            assign cur_block[7] = cur_block_all[255:224];
+            assign cur_block[8] = cur_block_all[287:256];
+            assign cur_block[9] = cur_block_all[319:288];
+            assign cur_block[10] = cur_block_all[351:320];
+            assign cur_block[11] = cur_block_all[383:352];
+            assign cur_block[12] = cur_block_all[415:384];
+            assign cur_block[13] = cur_block_all[447:416];
+            assign cur_block[14] = cur_block_all[479:448];
+            assign cur_block[15] = cur_block_all[511:480];
 
 
 
@@ -213,37 +207,21 @@
 
             //start branch prediction
             wire [`BHT_Index_WID] pc_bht_idx = pc[`BHT_Index_RANGE];
-            // always@(*) begin
-            //     pred_pc=pc+4;
-            //     pred_jump=0;
-            //     if(get_inst[6:0]==7'b1101111) begin
-            //         //jal
-            //         pred_pc=pc + {{12{get_inst[31]}}, get_inst[19:12], get_inst[20], get_inst[30:21], 1'b0};
-            //         pred_jump=1;
-            //     end
-            //     else if(get_inst[6:0]== 7'b1100011) begin
-            //         //branch
-            //         if (bht[pc_bht_idx] >= 2'd2) begin
-            //             pred_pc   = pc + {{20{get_inst[31]}}, get_inst[7], get_inst[30:25], get_inst[11:8], 1'b0};
-            //             pred_jump = 1;
-            //         end
-            //     end
-            // end
-            always @(*) begin
-                pred_pc   = pc + 4;
-                pred_jump = 0;
-                case (get_inst[`OPCODE_RANGE])
-                    `OPCODE_JAL: begin
-                        pred_pc   = pc + {{12{get_inst[31]}}, get_inst[19:12], get_inst[20], get_inst[30:21], 1'b0};
+            always@(*) begin
+                pred_pc=pc+4;
+                pred_jump=0;
+                if(get_inst[6:0]==7'b1101111) begin
+                    //jal
+                    pred_pc=pc + {{12{get_inst[31]}}, get_inst[19:12], get_inst[20], get_inst[30:21], 1'b0};
+                    pred_jump=1;
+                end
+                else if(get_inst[6:0]== 7'b1100011) begin
+                    //branch
+                    if (bht[pc_bht_idx] >= 2'd2) begin
+                        pred_pc   = pc + {{20{get_inst[31]}}, get_inst[7], get_inst[30:25], get_inst[11:8], 1'b0};
                         pred_jump = 1;
                     end
-                    `OPCODE_BR: begin
-                        if (bht[pc_bht_idx] >= 2'd2) begin
-                            pred_pc   = pc + {{20{get_inst[31]}}, get_inst[7], get_inst[30:25], get_inst[11:8], 1'b0};
-                            pred_jump = 1;
-                        end
-                    end
-                endcase
+                end
             end
 
 
