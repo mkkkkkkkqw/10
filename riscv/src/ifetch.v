@@ -65,8 +65,8 @@
             wire [`ICache_BlockOffset_WID] pc_blockOffset = pc[`ICache_BlockOffset_RANGE];
             wire [`ICache_Index_WID] pc_index = pc[`ICache_Index_RANGE];
             wire [`ICache_Tag_WID] pc_tag = pc[`ICache_Tag_RANGE];
-            wire miss=!valid[pc_index]|| (tag[pc_index] != pc_tag);
-            wire hit = !miss;
+            // wire miss=!valid[pc_index]|| (tag[pc_index] != pc_tag);
+            // wire hit = !miss;
             wire [`ICache_Index_WID] mc_pc_index = mc_pc[`ICache_Index_RANGE];
             wire [`ICache_Tag_WID] mc_pc_tag = mc_pc[`ICache_Tag_RANGE];
 
@@ -78,8 +78,8 @@
             // wire pc_tag=pc[`TAG_RANGE];//标记
 
 
-            // wire hit = valid[pc_index]&&(pc_tag==tag[pc_index]);//命中
-            // wire miss=!hit;//未命中
+            wire hit = valid[pc_index]&&(pc_tag==tag[pc_index]);//命中
+            wire miss=!hit;//未命中
 
             // wire mc_pc_index=mc_pc[`INDEX_RANGE];//索引
             // wire mc_pc_tag=mc_pc[`TAG_RANGE];//标记(主内存中读取指令并将其存储在缓存中。)
