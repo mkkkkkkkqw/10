@@ -164,7 +164,7 @@
                 else if(rdy==0) begin
 
                 end
-                else if  begin
+                else  begin
                     result<=0;
                     if(alu_en) begin
                         result <= 1;
