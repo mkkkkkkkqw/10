@@ -1,5 +1,4 @@
-// implements 128KB of on-board RAM
-     localparam IDLE=0,IF=1,LOAD=2,STORE=3;
+
 module ram
 #(
   parameter ADDR_WIDTH = 17
