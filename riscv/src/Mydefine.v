@@ -16,7 +16,15 @@
 `define ICache_Index_WID 3:0
 `define ICache_Tag_RANGE 31:10
 `define ICache_Tag_WID 21:0
-
+`define ICACHE_BLK_NUM 16
+`define ICACHE_BLK_SIZE 64  // Bytes (16 instructions)
+`define ICACHE_BLK_WID 511:0  // ICACHE_BLK_SIZE*8 - 1 : 0
+`define ICACHE_BS_RANGE 5:2
+`define ICACHE_BS_WID 3:0
+`define ICACHE_IDX_RANGE 9:6
+`define ICACHE_IDX_WID 3:0
+`define ICACHE_TAG_RANGE 31:10
+`define ICACHE_TAG_WID 21:0
 
         //BHT
 `define BHT_SIZE 256
