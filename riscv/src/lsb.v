@@ -1,7 +1,7 @@
 `ifndef LSB
 `define LSB
 `include "Mydefine.v"
-         module LSB
+        module LSB
             (
                 input wire clk,
                 input wire rst,
