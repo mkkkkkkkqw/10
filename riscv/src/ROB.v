@@ -53,7 +53,7 @@
                 // update predictor
                 output reg                commit_br,
                 output reg                commit_br_jump,
-                output reg [   `ADDR_WID] commit_br_pc,
+                output reg [31:0] commit_br_pc,
 
                 //from RS
                 input wire alu_result,
@@ -115,7 +115,7 @@
             assign rob_nxt_full =( nxt_head==nxt_tail && !nxt_empty);//rob满了
 
             // wire nxt_empty = (nxt_head==nxt_tail && (empty||!issue));
-
+  assign head_rob_pos = head;
             assign rs1_ready=ready[rs1_pos];
             assign rs2_ready=ready[rs2_pos];
             assign rs1_val=val[rs1_pos];
