@@ -94,7 +94,7 @@
             );
 
             reg ready [`ROB_SIZE-1:0];
-            reg [`ROB_POS_WID] rd [`ROB_SIZE-1:0];
+            reg [`REG_POS_WID] rd [`ROB_SIZE-1:0];
             reg [`OP_WID] opcode [`ROB_SIZE-1:0];
             // reg [`FUNCT3_WID] funct3 [`ROB_SIZE-1:0];
             // reg funct7 [`ROB_SIZE-1:0];
@@ -126,7 +126,7 @@
             always @(posedge clk) begin
                 if(rst||rollback||!rdy) begin
                     if(!rdy) begin
-
+                        ;        
                     end
 
                     else begin
