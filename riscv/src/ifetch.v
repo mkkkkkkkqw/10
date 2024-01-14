@@ -49,7 +49,7 @@
             reg status;
 
             //instruction cache
-     localparam IDLE=0,IF=1,LOAD=2,STORE=3,WAIT_MEM=1;
+            localparam IDLE=0,IF=1,LOAD=2,STORE=3,WAIT_MEM=1;
             reg valid[`ICache_Block_NUM-1:0];//有效位
             reg [`TAG_WID] tag[`ICache_Block_NUM-1:0];//标记
             reg [`ICache_Block_WID]data[`ICache_Block_NUM-1:0];//每个块的数据
@@ -66,7 +66,7 @@
             wire [`ICache_Index_WID] pc_index = pc[`ICache_Index_RANGE];
             wire [`ICache_Tag_WID] pc_tag = pc[`ICache_Tag_RANGE];
             wire miss=!valid[pc_index]|| (tag[pc_index] != pc_tag);
-            wire hit = ~miss;
+            wire hit = !miss;
             wire [`ICache_Index_WID] mc_pc_index = mc_pc[`ICache_Index_RANGE];
             wire [`ICache_Tag_WID] mc_pc_tag = mc_pc[`ICache_Tag_RANGE];
 
@@ -125,6 +125,7 @@
 
 
                 else if(!rdy) begin
+                    ;
                     //wait
                 end
 
@@ -137,20 +138,15 @@
                     end
 
                     else begin
-                        if(miss) begin
-                            inst_rdy <= 0;
-                        end
-                        else if(rs_nxt_full||lsb_nxt_full||rob_nxt_full) begin
-                            inst_rdy<=0;
-                        end
-                        else  begin
-                            //hit
-                            inst_rdy<=1;
-                            inst<=get_inst;
+                        if (hit && !rs_nxt_full && !lsb_nxt_full && !rob_nxt_full) begin
+                            inst_rdy <= 1;
+                            inst <= get_inst;
                             inst_pc <= pc;
-                            pc<=pred_pc;
-                            // status<=IDLE;
-                            inst_pred_jump<=pred_jump;
+                            pc <= pred_pc;
+                            inst_pred_jump <= pred_jump;
+                        end
+                        else begin
+                            inst_rdy <= 0;
                         end
                     end
 
@@ -212,21 +208,37 @@
 
             //start branch prediction
             wire [`BHT_Index_WID] pc_bht_idx = pc[`BHT_Index_RANGE];
-            always@(*) begin
-                pred_pc=pc+4;
-                pred_jump=0;
-                if(get_inst[6:0]==7'b1101111) begin
-                    //jal
-                    pred_pc=pc + {{12{get_inst[31]}}, get_inst[19:12], get_inst[20], get_inst[30:21], 1'b0};
-                    pred_jump=1;
-                end
-                else if(get_inst[6:0]== 7'b1100011) begin
-                    //branch
-                    if (bht[pc_bht_idx] >= 2'd2) begin
-                        pred_pc   = pc + {{20{get_inst[31]}}, get_inst[7], get_inst[30:25], get_inst[11:8], 1'b0};
+            // always@(*) begin
+            //     pred_pc=pc+4;
+            //     pred_jump=0;
+            //     if(get_inst[6:0]==7'b1101111) begin
+            //         //jal
+            //         pred_pc=pc + {{12{get_inst[31]}}, get_inst[19:12], get_inst[20], get_inst[30:21], 1'b0};
+            //         pred_jump=1;
+            //     end
+            //     else if(get_inst[6:0]== 7'b1100011) begin
+            //         //branch
+            //         if (bht[pc_bht_idx] >= 2'd2) begin
+            //             pred_pc   = pc + {{20{get_inst[31]}}, get_inst[7], get_inst[30:25], get_inst[11:8], 1'b0};
+            //             pred_jump = 1;
+            //         end
+            //     end
+            // end
+            always @(*) begin
+                pred_pc   = pc + 4;
+                pred_jump = 0;
+                case (get_inst[`OPCODE_RANGE])
+                    `OPCODE_JAL: begin
+                        pred_pc   = pc + {{12{get_inst[31]}}, get_inst[19:12], get_inst[20], get_inst[30:21], 1'b0};
                         pred_jump = 1;
                     end
-                end
+                    `OPCODE_BR: begin
+                        if (bht[pc_bht_idx] >= 2'd2) begin
+                            pred_pc   = pc + {{20{get_inst[31]}}, get_inst[7], get_inst[30:25], get_inst[11:8], 1'b0};
+                            pred_jump = 1;
+                        end
+                    end
+                endcase
             end
 
 
