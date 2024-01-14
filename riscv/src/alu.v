@@ -107,56 +107,95 @@ reg jump;
     endcase
   end
 
-always @(posedge clk)begin
-    if(rst||rollback)begin
-        result<=0;
-        result_rob_pos<=0;
-        result_val<=0;
-    end
-    else if(rdy==0)begin
+// always @(posedge clk)begin
+//     if(rst||rollback)begin
+//         result<=0;
+//         result_rob_pos<=0;
+//         result_val<=0;
+//     end
+//     else if(rdy==0)begin
 
-    end
-    else if (alu_en)begin
-        result<=1;
-        result_rob_pos<=rob_pos;
-        case(opcode)
-            7'b0110011:begin//计算
-                result_val<=arith_res;
-            end
-            7'b0010011:begin//立即数
-                result_val<=arith_res;
-            end
-            7'b1101111:begin//jal
-                result_val<=pc+4;
-                // result_jump=1;
-                result_pc<=pc+imm;
-            end
-            7'b1100111:begin//jalr
-                result_val<=pc+4;
-                // result_jump=1;
-                result_pc<=val1+imm;
-            end
-            7'b1100011:begin//branch
-                if(jump)
-                result_val=pc+4;
-                result_jump<=1;
-                result_pc=pc+imm;
-            end
-            7'b0110111:begin//lui
-                result_val<=imm;
-            end
-            7'b0010111:begin//auipc
-                result_val<=pc+imm;
-            end
-            // 7'b0000011:begin//load
-            //     result_val<=arith_res;
-            // end
-            default:begin
-                result_val=0;
-            end
+//     end
+//     else if (alu_en)begin
+//         result<=1;
+//         result_rob_pos<=rob_pos;
+//         case(opcode)
+//             7'b0110011:begin//计算
+//                 result_val<=arith_res;
+//             end
+//             7'b0010011:begin//立即数
+//                 result_val<=arith_res;
+//             end
+//             7'b1101111:begin//jal
+//                 result_val<=pc+4;
+//                 // result_jump=1;
+//                 result_pc<=pc+imm;
+//             end
+//             7'b1100111:begin//jalr
+//                 result_val<=pc+4;
+//                 // result_jump=1;
+//                 result_pc<=val1+imm;
+//             end
+//             7'b1100011:begin//branch
+//                 if(jump)
+//                 result_val=pc+4;
+//                 result_jump<=1;
+//                 result_pc=pc+imm;
+//             end
+//             7'b0110111:begin//lui
+//                 result_val<=imm;
+//             end
+//             7'b0010111:begin//auipc
+//                 result_val<=pc+imm;
+//             end
+//             // 7'b0000011:begin//load
+//             //     result_val<=arith_res;
+//             // end
+//             default:begin
+//                 result_val=0;
+//             end
+//         endcase
+//     end
+// end
+ always @(posedge clk) begin
+    if (rst || rollback) begin
+      result <= 0;
+      result_rob_pos <= 0;
+      result_val <= 0;
+      result_jump <= 0;
+      result_pc <= 0;
+    end else if (!rdy) begin
+      ;
+    end else begin
+      result <= 0;
+      if (alu_en) begin
+        result <= 1;
+        result_rob_pos <= rob_pos;
+        result_jump <= 0;
+        case (opcode)
+          `OPCODE_ARITH, `OPCODE_ARITHI: result_val <= arith_res;
+          `OPCODE_BR:
+          if (jump) begin
+            result_jump <= 1;
+            result_pc   <= pc + imm;
+          end else begin
+            result_pc   <= pc + 4;
+          end
+          `OPCODE_JAL: begin
+            result_jump <= 1;
+            result_val <= pc + 4;
+            result_pc  <= pc + imm;
+          end
+          `OPCODE_JALR: begin
+            result_jump <= 1;
+            result_val <= pc + 4;
+            result_pc  <= val1 + imm;
+          end
+          `OPCODE_LUI:   result_val <= imm;
+          `OPCODE_AUIPC: result_val <= pc + imm;
         endcase
+      end
     end
-end
-
+  end
 endmodule
 `endif //ALU
